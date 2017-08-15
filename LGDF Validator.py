@@ -39,7 +39,7 @@ def uni_verify(zip_file, md5_dict, outputfolder, xmlfolder, ftp_user, ftp_pw):
         local_xml = os.path.join(xmlfolder, xml)
         try:
             ET.parse(local_xml)
-        except:
+        except ET.XMLSyntaxError:
             lock.acquire()
             with open(os.path.join(outputfolder, "Bad XML.txt"), 'a') as output:
                 output.write(zip_file + "\t" + xml + "\n")
