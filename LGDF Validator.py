@@ -10,6 +10,7 @@ import zipfile
 import os
 import hashlib
 import xml.etree.ElementTree as ET
+import xml.parsers.expat
 from multiprocessing import Pool, Lock
 from itertools import repeat
 import getpass
@@ -18,6 +19,7 @@ import getpass
 def init(l):
     global lock
     lock = l
+
 
 def uni_verify(zip_file, md5_dict, outputfolder, xmlfolder, ftp_user, ftp_pw):
     ftp = FTP('lipperftp.thomsonreuters.com', ftp_user, ftp_pw)
@@ -28,27 +30,30 @@ def uni_verify(zip_file, md5_dict, outputfolder, xmlfolder, ftp_user, ftp_pw):
     f.close()
     xml_list = zipfile.ZipFile(local_filename).namelist()
     no_xml_list = len(xml_list)
-    actual_md5 = hashlib.md5(open(local_filename,'rb').read()).hexdigest()
+    actual_md5 = hashlib.md5(open(local_filename, 'rb').read()).hexdigest()
     if actual_md5 == md5_dict[zip_file]:
         ok = "OK"
     else:
         ok = "Not OK"
     xml_list = zipfile.ZipFile(local_filename).namelist()
-    for xml in xml_list:
-        zipfile.ZipFile(local_filename).extract(xml, path = xmlfolder)
-        local_xml = os.path.join(xmlfolder, xml)
+    for xml_file in xml_list:
+        zipfile.ZipFile(local_filename).extract(xml_file, path=xmlfolder)
+        local_xml = os.path.join(xmlfolder, xml_file)
         try:
             ET.parse(local_xml)
-        except ET.XMLSyntaxError:
+        except ET.ParseError:
             lock.acquire()
+            line = ET.ParseError.position[0]
+            column = ET.ParseError.position[1]
+            error = xml.parsers.expat.ErrorString(ET.ParseError.code)
             with open(os.path.join(outputfolder, "Bad XML.txt"), 'a') as output:
-                output.write(zip_file + "\t" + xml + "\n")
+                output.write(zip_file + "\t" + xml_file + "\t" + line + "\t" + column + "\t" + error + "\n")
             lock.release()
         finally:
             lock.acquire()
             try:
                 os.remove(local_xml)
-            except:
+            except OSError:
                 print("Issue removing " + local_xml)
             lock.release()
     lock.acquire()
@@ -56,7 +61,7 @@ def uni_verify(zip_file, md5_dict, outputfolder, xmlfolder, ftp_user, ftp_pw):
         output.write(zip_file + "\t" + str(md5_dict[zip_file]) + "\t" + actual_md5 + "\t" + ok + "\t" + str(no_xml_list) + "\n")
     try:
         os.remove(local_filename)
-    except:
+    except OSError:
         print("Issue removing " + local_filename)
     lock.release()
 
@@ -104,13 +109,11 @@ if __name__ == '__main__':
                 md5_dict[md5_file_name] = md5_checksum
             os.remove(os.path.join(xmlfolder,md5_file))
 
-    open("md5 verification.txt", 'w')
+    open("md5 verification.txt", 'w').write("File name\tLipper checksum\tVerified checksum\tOK?\tNumber of XML files\n")
     open("md5 verification.txt", 'w').close()
-    open("md5 verification.txt", 'a').write("File name\tLipper checksum\tVerified checksum\tOK?\tNumber of XML files\n")
 
-    open("Bad XML.txt", 'w')
+    open("Bad XML.txt", 'w').write("Zip file name\tXML file name\tLine\tColumn\tError\n")
     open("Bad XML.txt", 'w').close()
-    open("Bad XML.txt", 'a').write("Zip file name\tXML file name\n")
 
     l = Lock()
     file_list = list(md5_dict.keys())
