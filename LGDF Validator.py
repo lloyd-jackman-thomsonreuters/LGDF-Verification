@@ -49,7 +49,7 @@ def uni_verify(zip_file, md5_dict, outputfolder, xmlfolder, ftp_user, ftp_pw):
             try:
                 os.remove(local_xml)
             except:
-                pass
+                print("Issue removing " + local_xml)
             lock.release()
     lock.acquire()
     with open(os.path.join(outputfolder, "md5 verification.txt"), 'a') as output:
@@ -57,7 +57,7 @@ def uni_verify(zip_file, md5_dict, outputfolder, xmlfolder, ftp_user, ftp_pw):
     try:
         os.remove(local_filename)
     except:
-        pass
+        print("Issue removing " + local_filename)
     lock.release()
 
 if __name__ == '__main__':
