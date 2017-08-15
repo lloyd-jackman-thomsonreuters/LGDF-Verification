@@ -43,8 +43,8 @@ def uni_verify(zip_file, md5_dict, outputfolder, xmlfolder, ftp_user, ftp_pw):
             ET.parse(local_xml)
         except ET.ParseError:
             lock.acquire()
-            line = ET.ParseError.position[0]
-            column = ET.ParseError.position[1]
+            line = str(ET.ParseError.position[0])
+            column = str(ET.ParseError.position[1])
             error = xml.parsers.expat.ErrorString(ET.ParseError.code)
             with open(os.path.join(outputfolder, "Bad XML.txt"), 'a') as output:
                 output.write(zip_file + "\t" + xml_file + "\t" + line + "\t" + column + "\t" + error + "\n")
