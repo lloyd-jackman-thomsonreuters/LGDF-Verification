@@ -45,7 +45,7 @@ def uni_verify(zip_file, md5_dict, outputfolder, xmlfolder, ftp_user, ftp_pw):
             lock.acquire()
             line, column = err.position
             error = xml.parsers.expat.ErrorString(err.code)
-            with open(xml_file) as bad_xml:
+            with open(local_xml) as bad_xml:
                 for i, file_line in enumerate(bad_xml):
                     if i == (line - 1):
                         bad_line = file_line
